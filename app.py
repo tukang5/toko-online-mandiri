@@ -119,7 +119,7 @@ if halaman == "Landing Page (Promo)":
     # Produk Fisik Section
     col1, col2 = st.columns([1, 1.2])
     with col1:
-        st.image(products["fisik"]["gambar"], use_column_width=True)
+        st.image(products["fisik"]["gambar"], use_container_width=True)
     with col2:
         st.markdown(f"## ⭐ {products['fisik']['nama']}")
         st.markdown(f"<h3 style='color: #E53935;'>Harga Hari Ini: Rp {products['fisik']['harga']:,}</h3>", unsafe_allow_html=True)
