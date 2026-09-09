@@ -7,35 +7,49 @@ import urllib.parse
 # ==========================================
 st.set_page_config(page_title="Toko Online Pro & Landing Page", page_icon="💰", layout="wide")
 
-# ------------------------------------------
-# HACK CSS: MENYEMBUNYIKAN SEMUA ATRIBUT STREAMLIT (WHITE LABEL)
-# ------------------------------------------
+# HACK CSS VERSI HP: MENYEMBUNYIKAN ATRIBUT STREAMLIT DENGAN AMAN
 hide_streamlit_style = """
             <style>
-            #MainMenu {visibility: hidden;}
-            footer {visibility: hidden;}
-            header {visibility: hidden;}
-            #stDecoration {display:none;}
-            [data-testid="stHeader"] {background-color: rgba(0,0,0,0); height: 0rem;}
-            .viewerBadge_container__1QS1h {display: none !important;}
+            #MainMenu, footer, header, #stDecoration, [data-testid="stHeader"], .viewerBadge_container__1QS1h {
+                visibility: hidden !important;
+                opacity: 0 !important;
+                pointer-events: none !important;
+                height: 0px !important;
+            }
             </style>
             """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
-# Data bawaan (Default) sebelum diubah oleh Admin di dashboard
-DEFAULT_META_ID = "NOMOR_PIXEL_META_ANDA"
-DEFAULT_TIKTOK_ID = "NOMOR_PIXEL_TIKTOK_ANDA"
-DEFAULT_WA = "6281234567890"
+# ------------------------------------------
+# INISIALISASI DATABASE DENGAN NAMA 100% NETRAL (SIAP JUAL)
+# ------------------------------------------
+if "prod_fisik_nama" not in st.session_state:
+    st.session_state["prod_fisik_nama"] = "Nama Produk Fisik Anda di Sini"
+if "prod_fisik_harga" not in st.session_state:
+    st.session_state["prod_fisik_harga"] = 0
+if "prod_fisik_desc" not in st.session_state:
+    st.session_state["prod_fisik_desc"] = "Silakan masuk ke menu 'Pengaturan Admin (Rahasia)' untuk mengganti nama, harga, deskripsi, dan foto produk fisik ini dengan milik Anda sendiri."
+if "prod_fisik_img" not in st.session_state:
+    st.session_state["prod_fisik_img"] = "https://unsplash.com" # Gambar placeholder netral
 
-# Memastikan data live selalu sinkron dengan input dari Halaman Admin
+if "prod_digi_nama" not in st.session_state:
+    st.session_state["prod_digi_nama"] = "Nama Produk Digital Anda di Sini"
+if "prod_digi_harga" not in st.session_state:
+    st.session_state["prod_digi_harga"] = 0
+if "prod_digi_desc" not in st.session_state:
+    st.session_state["prod_digi_desc"] = "Silakan masuk ke menu 'Pengaturan Admin (Rahasia)' untuk mengganti nama, harga, deskripsi, dan foto produk digital ini dengan milik Anda sendiri."
+if "prod_digi_img" not in st.session_state:
+    st.session_state["prod_digi_img"] = "https://unsplash.com" # Gambar placeholder netral
+
+# Data Pixel & WhatsApp Default
 if "meta_id_live" not in st.session_state:
-    st.session_state["meta_id_live"] = DEFAULT_META_ID
+    st.session_state["meta_id_live"] = "NOMOR_PIXEL_META_ANDA"
 if "tiktok_id_live" not in st.session_state:
-    st.session_state["tiktok_id_live"] = DEFAULT_TIKTOK_ID
+    st.session_state["tiktok_id_live"] = "NOMOR_PIXEL_TIKTOK_ANDA"
 if "wa_live" not in st.session_state:
-    st.session_state["wa_live"] = DEFAULT_WA
+    st.session_state["wa_live"] = "6281234567890"
 
-# Ambil nilai aktif yang sedang digunakan
+# Menghubungkan variabel aktif dengan session state
 ACTIVE_META_ID = st.session_state["meta_id_live"]
 ACTIVE_TIKTOK_ID = st.session_state["tiktok_id_live"]
 ACTIVE_WA = st.session_state["wa_live"]
@@ -44,7 +58,6 @@ ACTIVE_WA = st.session_state["wa_live"]
 # 2. SISTEM PELACAKAN PIXEL (HTML INJECTION)
 # ==========================================
 def inject_pixels_base():
-    """Menyuntikkan script dasar Meta & TikTok Pixel ke latar belakang aplikasi"""
     pixel_code = f"""
     <!-- Meta Pixel Code -->
     <script>
@@ -59,54 +72,22 @@ def inject_pixels_base():
     fbq('init', '{ACTIVE_META_ID}');
     fbq('track', 'PageView');
     </script>
-    
-    <!-- TikTok Pixel Code -->
-    <script>
-    !function (w, d, t) {{
-      w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];ttq.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie","holdConsent","revokeConsent","grantConsent"],ttq.setAndDefer=function(t,e){{t[e]=function(){{t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}}};for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);ttq.instance=function(t){{for(var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n]);return e}},ttq.load=function(e,n){{var r="https://tiktok.com",o=n&&n.mixpool;ttq._i=ttq._i||{{}},ttq._i[e]=[],ttq._i[e]._u=r,w[t]._v="1.3.1",w[t]._i=ttq._i,w[t]._a="c7d",var a=d.createElement("script");a.type="text/javascript",a.async=!0,a.src=r;var c=d.getElementsByTagName("script");c.parentNode.insertBefore(a,c)}};
-      ttq.load('{ACTIVE_TIKTOK_ID}');
-      ttq.page();
-    }}(window, document, 'ttq');
-    </script>
     """
     components.html(pixel_code, height=0)
 
 def track_pixel_event(event_name, prod_name, value):
-    """Memicu event konversi spesifik (AddToCart / Purchase) ke Meta & TikTok"""
     event_code = f"""
     <script>
     parent.fbq('track', '{event_name}', {{content_names: ['{prod_name}'], value: {value}, currency: 'IDR'}});
-    parent.ttq.track('{event_name}', {{content_name: ['{prod_name}'], value: {value}, currency: 'IDR'}});
     </script>
     """
     components.html(event_code, height=0)
-    st.toast(f"📡 Pixel Event Sent: {event_name} for {prod_name}", icon="📈")
+    st.toast(f"📡 Pixel Event Sent: {event_name}", icon="📈")
 
-# Jalankan skrip pelacakan dasar di latar belakang
 inject_pixels_base()
 
 # ==========================================
-# 3. DATABASE PRODUK LOKAL
-# ==========================================
-products = {
-    "fisik": {
-        "nama": "Smart Tumbler LED Premium",
-        "harga": 149000,
-        "deskripsi": "Tumbler stainless steel anti karat dengan pengukur suhu otomatis pada tutupnya. Menjaga suhu air panas/dingin hingga 12 jam.",
-        "gambar": "https://unsplash.com",
-        "qris_mock": "https://wikimedia.org"
-    },
-    "digital": {
-        "nama": "E-Book Masterclass Content Creator 2026",
-        "harga": 99000,
-        "deskripsi": "Strategi lengkap membangun personal branding & menghasilkan jutaan rupiah dari media sosial tanpa modal besar.",
-        "gambar": "https://unsplash.com",
-        "qris_mock": "https://wikimedia.org"
-    }
-}
-
-# ==========================================
-# 4. NAVIGASI SIDEBAR
+# 3. NAVIGASI SIDEBAR
 # ==========================================
 st.sidebar.title("📌 Menu Navigasi")
 halaman = st.sidebar.radio("Pilih Halaman:", ["Landing Page (Promo)", "Halaman Check-out Langsung", "⚙️ Pengaturan Admin (Rahasia)"])
@@ -116,82 +97,106 @@ if halaman == "Landing Page (Promo)":
     st.markdown("<h1 style='text-align: center; color: #1E88E5;'>🚀 PROMO SPESIAL HARI INI 🚀</h1>", unsafe_allow_html=True)
     st.divider()
 
-    # Produk Fisik Section
+    # Tampilkan Produk Fisik
     col1, col2 = st.columns([1, 1.2])
     with col1:
-        st.image(products["fisik"]["gambar"], use_container_width=True)
+        st.image(st.session_state["prod_fisik_img"], use_container_width=True)
     with col2:
-        st.markdown(f"## ⭐ {products['fisik']['nama']}")
-        st.markdown(f"<h3 style='color: #E53935;'>Harga Hari Ini: Rp {products['fisik']['harga']:,}</h3>", unsafe_allow_html=True)
-        st.write(products["fisik"]["deskripsi"])
+        st.markdown(f"## ⭐ {st.session_state['prod_fisik_nama']}")
+        st.markdown(f"<h3 style='color: #E53935;'>Harga Hari Ini: Rp {st.session_state['prod_fisik_harga']:,}</h3>", unsafe_allow_html=True)
+        st.write(st.session_state["prod_fisik_desc"])
         
-        if st.button("BELI PRODUK FISIK SEKARANG 🛒", key="btn_lp_fisik", type="primary"):
-            track_pixel_event("AddToCart", products["fisik"]["nama"], products["fisik"]["harga"])
+        if st.button("BELI PRODUK FISIK SEKARANG 🛒", key="btn_lp_phys_v3", type="primary"):
+            track_pixel_event("AddToCart", st.session_state["prod_fisik_nama"], st.session_state["prod_fisik_harga"])
             st.session_state["produk_pilihan"] = "fisik"
-            st.success("Produk dipilih! Silakan masuk ke menu 'Halaman Check-out Langsung' di sebelah kiri untuk membayar.")
+            st.success("Produk dipilih! Silakan masuk ke menu 'Halaman Check-out Langsung' di sebelah kiri.")
 
     st.divider()
 
-    # Produk Digital Section
+    # Tampilkan Produk Digital
     col3, col4 = st.columns([1, 1.2])
     with col3:
-        st.image(products["digital"]["gambar"], use_column_width=True)
+        st.image(st.session_state["prod_digi_img"], use_container_width=True)
     with col4:
-        st.markdown(f"## ⚡ {products['digital']['nama']}")
-        st.markdown(f"<h3 style='color: #E53935;'>Harga Hari Ini: Rp {products['digital']['harga']:,}</h3>", unsafe_allow_html=True)
-        st.write(products["digital"]["deskripsi"])
+        st.markdown(f"## ⚡ {st.session_state['prod_digi_nama']}")
+        st.markdown(f"<h3 style='color: #E53935;'>Harga Hari Ini: Rp {st.session_state['prod_digi_harga']:,}</h3>", unsafe_allow_html=True)
+        st.write(st.session_state["prod_digi_desc"])
         
-        if st.button("AMBIL E-BOOK DIGITAL ⚡", key="btn_lp_digital", type="primary"):
-            track_pixel_event("AddToCart", products["digital"]["nama"], products["digital"]["harga"])
+        if st.button("AMBIL PRODUK DIGITAL ⚡", key="btn_lp_digi_v3", type="primary"):
+            track_pixel_event("AddToCart", st.session_state["prod_digi_nama"], st.session_state["prod_digi_harga"])
             st.session_state["produk_pilihan"] = "digital"
-            st.success("Produk dipilih! Silakan masuk ke menu 'Halaman Check-out Langsung' di sebelah kiri untuk membayar.")
+            st.success("Produk dipilih! Silakan masuk ke menu 'Halaman Check-out Langsung' di sebelah kiri.")
 
 # --- HALAMAN 2: CHECK-OUT & PEMBAYARAN ---
 elif halaman == "Halaman Check-out Langsung":
     st.title("💳 Halaman Check-out & Pembayaran")
     
     pilihan = st.session_state.get("produk_pilihan", "fisik")
-    produk_terpilih = products[pilihan]
     
-    st.info(f"Produk yang akan Anda beli: **{produk_terpilih['nama']}** — Rp {produk_terpilih['harga']:,}")
+    if pilihan == "fisik":
+        nama_p = st.session_state["prod_fisik_nama"]
+        harga_p = st.session_state["prod_fisik_harga"]
+    else:
+        nama_p = st.session_state["prod_digi_nama"]
+        harga_p = st.session_state["prod_digi_harga"]
+        
+    st.info(f"Produk yang akan Anda beli: **{nama_p}** — Rp {harga_p:,}")
     
     st.subheader("📋 Isi Data Pengiriman")
     nama_pembeli = st.text_input("Nama Lengkap:")
     email_pembeli = st.text_input("Alamat Email:")
-    alamat_pembeli = st.text_area("Alamat Lengkap (Kosongkan jika produk digital):")
+    alamat_pembeli = st.text_area("Alamat Lengkap:")
     
     st.subheader("💵 Pilih Metode Pembayaran")
     metode_bayar = st.radio("Metode:", ["QRIS Otomatis", "Check-out via WhatsApp"])
     
     if metode_bayar == "QRIS Otomatis":
         st.write("Silakan scan QRIS di bawah ini dengan E-Wallet/Mobile Banking Anda:")
-        st.image(produk_terpilih["qris_mock"], width=250)
+        st.image("https://wikimedia.org", width=250)
         
         if st.button("Konfirmasi Pembayaran Selesai ✅", type="primary"):
             if nama_pembeli and email_pembeli:
-                track_pixel_event("Purchase", produk_terpilih["nama"], produk_terpilih["harga"])
+                track_pixel_event("Purchase", nama_p", harga_p)
                 st.balloons()
-                st.success(f"Terima kasih {nama_pembeli}! Pembayaran berhasil. Detail pesanan terkirim otomatis ke sistem.")
+                st.success(f"Terma kasih {nama_pembeli}! Pembayaran berhasil.")
             else:
                 st.warning("Mohon isi Nama Lengkap dan Email terlebih dahulu!")
                 
     elif metode_bayar == "Check-out via WhatsApp":
-        pesan_text = f"Halo Admin Toko, saya mau beli:\n\n" \
-                     f"📦 Produk: {produk_terpilih['nama']}\n" \
-                     f"💰 Total: Rp {produk_terpilih['harga']:,}\n\n" \
-                     f"👤 Nama: {nama_pembeli}\n" \
-                     f"📧 Email: {email_pembeli}\n" \
-                     f"🏠 Alamat: {alamat_pembeli if alamat_pembeli else 'Produk Digital'}"
-                     
+        pesan_text = f"Halo Admin Toko, saya mau beli:\n\n📦 Produk: {nama_p}\n💰 Total: Rp {harga_p:,}\n\n👤 Nama: {nama_pembeli}\n📧 Email: {email_pembeli}"
         pesan_encode = urllib.parse.quote(pesan_text)
         tautan_wa = f"https://wa.me{ACTIVE_WA}?text={pesan_encode}"
         
         st.markdown(f'<a href="{tautan_wa}" target="_blank"><button style="background-color: #25D366; color: white; border: none; padding: 12px 24px; font-size: 16px; border-radius: 5px; cursor: pointer;">💬 Kirim Pesanan ke WhatsApp Admin</button></a>', unsafe_allow_html=True)
-        track_pixel_event("InitiateCheckout", produk_terpilih["nama"], produk_terpilih["harga"])
 
-# --- HALAMAN 3: DASHBOARD ADMIN (UNTUK PEMBELI TOKO) ---
+# --- HALAMAN 3: DASHBOARD ADMIN (KELOLA TOTAL INTERFACES) ---
 elif halaman == "⚙️ Pengaturan Admin (Rahasia)":
     st.title("⚙️ Dashboard Pengaturan Pemilik Toko")
-    st.write("Ubah ID pelacakan iklan dan nomor tujuan WhatsApp di sini tanpa perlu membongkar coding.")
+    st.write("Kelola produk, ubah nomor WhatsApp, dan atur ID Pixel tanpa menyentuh coding.")
     st.divider()
     
+    # BAGIAN A: PENGATURAN PRODUK FISIK
+    st.subheader("📦 1. Kelola Produk Fisik")
+    edit_f_nama = st.text_input("Nama Produk Fisik:", value=st.session_state["prod_fisik_nama"])
+    edit_f_harga = st.number_input("Harga Produk Fisik (Rupiah):", value=st.session_state["prod_fisik_harga"], step=1000)
+    edit_f_desc = st.text_area("Deskripsi Produk Fisik:", value=st.session_state["prod_fisik_desc"])
+    edit_f_img = st.text_input("URL Link Foto Produk Fisik:", value=st.session_state["prod_fisik_img"])
+    
+    st.divider()
+    
+    # BAGIAN B: PENGATURAN PRODUK DIGITAL
+    st.subheader("⚡ 2. Kelola Produk Digital")
+    edit_d_nama = st.text_input("Nama Produk Digital:", value=st.session_state["prod_digi_nama"])
+    edit_d_harga = st.number_input("Harga Produk Digital (Rupiah):", value=st.session_state["prod_digi_harga"], step=1000)
+    edit_d_desc = st.text_area("Deskripsi Produk Digital:", value=st.session_state["prod_digi_desc"])
+    edit_d_img = st.text_input("URL Link Foto Produk Digital:", value=st.session_state["prod_digi_img"])
+    
+    st.divider()
+    
+    # BAGIAN C: PENGATURAN UTILITAS KONEKSI
+    st.subheader("🔗 3. Pengaturan Kontak & Iklan")
+    input_meta = st.text_input("Meta Pixel ID Aktif:", value=ACTIVE_META_ID)
+    input_tiktok = st.text_input("TikTok Pixel ID Aktif:", value=ACTIVE_TIKTOK_ID)
+    input_wa = st.text_input("Nomor WhatsApp Toko (Gunakan format 62):", value=ACTIVE_WA)
+    
+    if st.button("Simpan Semua Perubahan Toko 💾", type="primary"):
