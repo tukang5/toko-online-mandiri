@@ -8,9 +8,12 @@ import plotly.graph_objects as go
 import re
 
 # ==========================================
-# 1. STYLE PREMIUM CERAH ALA SCALEV (WHITE LABEL)
+# 1. STYLE PREMIUM CERAH & REBRANDING MEREK
 # ==========================================
-st.set_page_config(page_title="Scalev Pro SaaS Platform", page_icon="⚡", layout="wide")
+# SILAKAN GANTI TULISAN "NamaTokoAnda" DI BAWAH INI SESUAI MEREK ANDA
+NAMA_APLIKASI_ANDA = "Larisko"
+
+st.set_page_config(page_title=f"{NAMA_APLIKASI_ANDA} SaaS Platform", page_icon="⚡", layout="wide")
 
 scalev_premium_style = """
             <style>
@@ -52,7 +55,6 @@ st.markdown(scalev_premium_style, unsafe_allow_html=True)
 DB_FILE = "scalev_pro_database.db"
 
 def init_db():
-    """Menginisialisasi seluruh tabel relasional multi-user di server cloud"""
     conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()
     c.execute("""CREATE TABLE IF NOT EXISTS users (
@@ -62,7 +64,7 @@ def init_db():
     c.execute("""CREATE TABLE IF NOT EXISTS orders (
                     id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT, pembeli_nama TEXT, pembeli_email TEXT, status TEXT, tanggal TEXT)""")
     
-    # MENDAFTARKAN AKUN SUPER ADMIN OTOMATIS KE DATABASE PUSAT
+    # MENDAFTARKAN AKUN SUPER ADMIN OTOMATIS
     super_user = "superadmin"
     super_pass_hash = hashlib.sha256(str.encode("super123")).hexdigest()
     c.execute("SELECT * FROM users WHERE username=?", (super_user,))
@@ -98,7 +100,6 @@ if "page" in query_params:
         p_nama, p_harga, p_desc, p_img, h_embed = lp_data
         u_wa, u_pixel = user_data
         
-        # Jalankan Meta Pixel Pembeli otomatis jika diisi
         if u_pixel and u_pixel != "Belum Diatur":
             pixel_script = f"""<script>
             !function(f,b,e,v,n,t,s){{if(f.fbq)return;n=f.fbq=function(){{n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)}};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e);s.parentNode.insertBefore(t,s)}}(window,document,'script','https://facebook.net');
@@ -111,7 +112,6 @@ if "page" in query_params:
         st.subheader(f"Rp {p_harga:,.0f}")
         st.write(p_desc)
         
-        # SISTEM ENGINGE RENDER EMBED HTML / IFRAME VIDEO & MAPS
         if h_embed and h_embed.strip() != "":
             st.markdown("---")
             calculated_height = 450
@@ -144,8 +144,8 @@ if "page" in query_params:
 # 4. PORTAL AUTENTIKASI MULTI-USER SAAS
 # ==========================================
 if not st.session_state["is_logged_in"]:
-    st.title("⚡ Scalev Pro SaaS Builder Platform")
-    st.caption("Buat akun mandiri, buat landing page kustom, dan lacak data penjualan dengan grafik profesional.")
+    st.title(f"⚡ {NAMA_APLIKASI_ANDA} SaaS Builder Platform")
+    st.caption("Buat akun mandiri, bangun landing page kustom, dan lacak data penjualan dengan grafik profesional.")
     
     tab_masuk, tab_daftar = st.tabs(["🔒 Masuk Dashboard Akun", "📝 Registrasi Anggota Baru"])
     
@@ -200,7 +200,6 @@ else:
         st.session_state["user_aktif"] = None
         st.rerun()
         
-    # LOGIKA PEMBAGIAN MENU ANTARA SUPERADMIN VS MEMBER BIASA
     if USER_NOW == "superadmin":
         menu_saas = st.sidebar.radio("Navigasi Super Admin:", ["👑 Kontrol Pusat Member & Transaksi"])
     else:
@@ -208,7 +207,7 @@ else:
         
     # --- PROSES RENDER TAMPILAN PUSAT KONTROL SUPER ADMIN ---
     if USER_NOW == "superadmin" and menu_saas == "👑 Kontrol Pusat Member & Transaksi":
-        st.title("👑 Dashboard Pusat Kontrol Super Admin")
+        st.title(f"👑 Dashboard Pusat Kontrol Super Admin - {NAMA_APLIKASI_ANDA}")
         st.caption("Pantau seluruh performa aktivitas pendaftaran member dan database transaksi global.")
         st.divider()
         
@@ -237,7 +236,7 @@ else:
         df_orders = pd.read_sql_query("SELECT * FROM orders WHERE username='" + USER_NOW + "'", conn)
         conn.close()
         
-        st.markdown("#### 📊 Dashboard Performa Bisnis Anda")
+        st.markdown(f"#### 📊 Dashboard Performa Bisnis — {NAMA_APLIKASI_ANDA}")
         total_order = len(df_orders)
         omzet_simulasi = total_order * lp_harga
         
@@ -264,6 +263,7 @@ else:
         conn.close()
         
         st.markdown("#### 📝 Modifikasi Konten Penawaran & HTML Embed")
+        # Menyambungkan tautan dengan domain/link utama server internet Anda
         tautan_promosi = f"https://streamlit.app{USER_NOW}"
         st.success(f"🔗 **Link Iklan Landing Page Publik Anda:** {tautan_promosi}")
         
